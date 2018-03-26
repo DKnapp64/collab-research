@@ -5,6 +5,7 @@ import numpy as np
 import gdal, gdalconst
 import ogr
 import os, sys
+from dbfread import DBF
 
 def get_spectral_wavelengths(inds):
   metalist = inds.GetMetadata_List()
@@ -48,6 +49,8 @@ def main(inbasedimac, inshape, invswir, outspecs):
   ## in1 = '/lustre/scratch/cao/OahuVSWIRTemp/rad/patch25_20170930_atrem_refl'
   ## in2 = '/Volumes/DGE/CAO/caodata/Scratch/dknapp/Kaneohe/patch25_20171001_dimac_match'
   
+  table = DBF(os.path.splitext(inshape)[0]+'.dbf', load=True)
+  fields = table.field_names
 
   ## Open up VSWIR image
   vswirds = gdal.Open(invswir)
@@ -162,7 +165,8 @@ def main(inbasedimac, inshape, invswir, outspecs):
   waves = get_spectral_wavelengths(vswirds)
   wavestring = np.array2string(waves, precision=2, separator=',', max_line_width=100000)
   wavestring = wavestring[1:-1]
-  headerstring = "Row_VSWIR, Column_VSWIR, Location_Quality, " + wavestring
+  headerstring = "Row_VSWIR, Column_VSWIR, Location_Quality, " + ", ".join(fields) + ", "
+  headerstring += wavestring
 
   f = open(outspecs, 'w')
   f.write("## Input Base Image: %s\n" % (inbasedimac))
@@ -244,8 +248,11 @@ def main(inbasedimac, inshape, invswir, outspecs):
     for row in np.arange(featurecount):
       spectra[row, band] = bandit.ReadAsArray(finalrowcols[row,1], finalrowcols[row,0], 1, 1)
 
+  ## Species, Tag, UTMX, UTMY, Lon, Lat,
   for row in np.arange(featurecount):
     stringrecord = "%d, %d, %s, " % (finalrowcols[row,0]+1, finalrowcols[row,1]+1, status[row])
+    for field in fields:
+      stringrecord += "%s, " % str(table.records[row][field])
     specrecord = np.array2string(spectra[row,:], precision=6, separator=',', max_line_width=100000)
     f.write(stringrecord + specrecord[1:-1] + "\n")
 
