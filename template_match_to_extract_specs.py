@@ -165,7 +165,8 @@ def main(inbasedimac, inshape, invswir, outspecs):
   waves = get_spectral_wavelengths(vswirds)
   wavestring = np.array2string(waves, precision=2, separator=',', max_line_width=100000)
   wavestring = wavestring[1:-1]
-  headerstring = "Row_VSWIR, Column_VSWIR, Location_Quality, " + ", ".join(fields) + ", "
+  headerstring = ", ".join(fields) + ", "
+  headerstring += "Row_VSWIR, Column_VSWIR, Location_Quality, "
   headerstring += wavestring
 
   f = open(outspecs, 'w')
@@ -250,9 +251,10 @@ def main(inbasedimac, inshape, invswir, outspecs):
 
   ## Species, Tag, UTMX, UTMY, Lon, Lat,
   for row in np.arange(featurecount):
-    stringrecord = "%d, %d, %s, " % (finalrowcols[row,0]+1, finalrowcols[row,1]+1, status[row])
+    stringrecord = ""
     for field in fields:
       stringrecord += "%s, " % str(table.records[row][field])
+    stringrecord += "%d, %d, %s, " % (finalrowcols[row,0]+1, finalrowcols[row,1]+1, status[row])
     specrecord = np.array2string(spectra[row,:], precision=6, separator=',', max_line_width=100000)
     f.write(stringrecord + specrecord[1:-1] + "\n")
 
